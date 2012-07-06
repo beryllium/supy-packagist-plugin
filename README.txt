@@ -1,1 +1,1 @@
-A plugin for Supybot to search www.packagist.com for PHP resources
+A plugin for Supybot to search www.packagist.org for PHP resources
