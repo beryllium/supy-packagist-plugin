@@ -27,6 +27,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 ###
+import urllib
 
 import supybot.utils as utils
 from supybot.commands import *
@@ -44,7 +45,15 @@ class Packagist(callbacks.Plugin):
 
         Adds a command for searching packagist.
         """
-        irc.reply('NO SOUP FOR YOU!')
+        headers = utils.web.defaultHeaders
+        headers['X-Requested-With'] = 'XMLHttpRequest'
+
+        search_url = 'http://packagist.org/search/'
+        opts = { 'search_query[query]' : text }
+
+        fd = utils.web.getUrlFd( '%s?%s' % (search_url, urllib.urlencode(msg.args[0])), headers )
+        irc.reply( fd.read() )
+        fd.close()
     find = wrap(find, ['text'])
 
 
