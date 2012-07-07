@@ -76,7 +76,7 @@ class MyParser(HTMLParser):
     s += " | ".join(matches)
     irc.reply(s)
     
-  def clear(self)
+  def clear(self):
     self.items = {}
     self.current_item = None
     self.current_description = False
