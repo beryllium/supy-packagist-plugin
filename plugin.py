@@ -29,12 +29,51 @@
 ###
 import urllib
 
+from HTMLParser import HTMLParser
+
 import supybot.utils as utils
 from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
+class MyParser(HTMLParser):
+  items = {}
+  current_item = None
+  current_description = False
+  current_link = False
 
+  def handle_starttag(self, tag, attrs):
+    if tag == 'li' and attrs[0][0] == 'data-url':
+      self.current_item = attrs[0][1]
+      self.items[ self.current_item ] = {}
+      self.items[ self.current_item ][ 'data-url' ] = attrs[0][1]
+
+    if tag == 'a' and self.current_item != None:
+      self.current_link = True
+
+    if tag == 'p' and self.current_item != None and attrs[0] == ( 'class', 'package-description' ):
+      self.current_description = True
+
+  def handle_endtag(self, tag):
+    if tag == 'a':
+      self.current_link = False
+    if tag == 'p':
+      self.current_description = False
+
+  def handle_data(self, data):
+    if self.current_link is True:
+      self.items[ self.current_item ][ 'name' ] = data
+    if self.current_description is True:
+      self.items[ self.current_item ][ 'desc' ] = data
+
+  def PrintItems(self, irc):
+    s = '%d matches' % ( len(self.items) )
+    s += ': '
+    matches = []
+    for i in self.items:
+      matches.append( '%s: %s <http://packagist.org%s>' % ( self.items[i]['name'], self.items[i]['desc'], self.items[i]['data-url'] ) )
+    s += " | ".join(matches)
+    irc.reply(s)
 
 class Packagist(callbacks.Plugin):
     """Add the help for "@plugin help Packagist" here
@@ -51,8 +90,10 @@ class Packagist(callbacks.Plugin):
         search_url = 'http://packagist.org/search/'
         opts = { 'search_query[query]' : text }
 
-        fd = utils.web.getUrlFd( '%s?%s' % (search_url, urllib.urlencode(msg.args[0])), headers )
-        irc.reply( fd.read() )
+        fd = utils.web.getUrlFd( '%s?%s' % (search_url, urllib.urlencode(opts)), headers )
+        parser = MyParser()
+        parser.feed(fd.read())
+        parser.PrintItems(irc)
         fd.close()
     find = wrap(find, ['text'])
 
