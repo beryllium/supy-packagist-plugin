@@ -36,6 +36,7 @@ from supybot.commands import *
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
+
 class MyParser(HTMLParser):
   items = {}
   current_item = None
@@ -74,6 +75,12 @@ class MyParser(HTMLParser):
       matches.append( '%s: %s <http://packagist.org%s>' % ( self.items[i]['name'], self.items[i]['desc'], self.items[i]['data-url'] ) )
     s += " | ".join(matches)
     irc.reply(s)
+    
+  def clear(self)
+    self.items = {}
+    self.current_item = None
+    self.current_description = False
+    self.current_link = False
 
 class Packagist(callbacks.Plugin):
     """Add the help for "@plugin help Packagist" here
@@ -94,6 +101,7 @@ class Packagist(callbacks.Plugin):
         parser = MyParser()
         parser.feed(fd.read())
         parser.PrintItems(irc)
+        parser.clear()
         fd.close()
     find = wrap(find, ['text'])
 
