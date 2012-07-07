@@ -76,12 +76,6 @@ class MyParser(HTMLParser):
     s += " | ".join(matches)
     irc.reply(s)
     
-  def clear(self):
-    self.items = {}
-    self.current_item = None
-    self.current_description = False
-    self.current_link = False
-
 class Packagist(callbacks.Plugin):
     """Add the help for "@plugin help Packagist" here
     This should describe *how* to use this plugin."""
@@ -101,7 +95,6 @@ class Packagist(callbacks.Plugin):
         parser = MyParser()
         parser.feed(fd.read())
         parser.PrintItems(irc)
-        parser.clear()
         fd.close()
     find = wrap(find, ['text'])
 
