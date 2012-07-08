@@ -79,13 +79,14 @@ class MyParser(HTMLParser):
     irc.reply(s)
     
 class Packagist(callbacks.Plugin):
-    """Add the help for "@plugin help Packagist" here
-    This should describe *how* to use this plugin."""
+    """Packagist plugin lets you search http://packagist.org for Composer
+    packages
+    - the @find <keyword> command is used to peform searches"""
     threaded = True
     def find(self, irc, msg, args, text):
         """<keyword>
 
-        Adds a command for searching packagist.
+        Searches http://packagist.org for Composer packages that match <keyword>
         """
         headers = utils.web.defaultHeaders
         headers['X-Requested-With'] = 'XMLHttpRequest'
