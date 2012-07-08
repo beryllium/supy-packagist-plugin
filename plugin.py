@@ -38,10 +38,12 @@ import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 
 class MyParser(HTMLParser):
-  items = {}
-  current_item = None
-  current_description = False
-  current_link = False
+  def __init__(self, irc):
+    HTMLParser.__init__(self)
+    items = {}
+    current_item = None
+    current_description = False
+    current_link = False
 
   def handle_starttag(self, tag, attrs):
     if tag == 'li' and attrs[0][0] == 'data-url':
@@ -92,7 +94,7 @@ class Packagist(callbacks.Plugin):
         opts = { 'search_query[query]' : text }
 
         fd = utils.web.getUrlFd( '%s?%s' % (search_url, urllib.urlencode(opts)), headers )
-        parser = MyParser()
+        parser = MyParser(irc)
         parser.feed(fd.read())
         parser.PrintItems(irc)
         fd.close()
