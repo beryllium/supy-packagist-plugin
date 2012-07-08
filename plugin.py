@@ -40,10 +40,10 @@ import supybot.callbacks as callbacks
 class MyParser(HTMLParser):
   def __init__(self, irc):
     HTMLParser.__init__(self)
-    items = {}
-    current_item = None
-    current_description = False
-    current_link = False
+    self.items = {}
+    self.current_item = None
+    self.current_description = False
+    self.current_link = False
 
   def handle_starttag(self, tag, attrs):
     if tag == 'li' and attrs[0][0] == 'data-url':
