@@ -28,8 +28,7 @@
 
 ###
 import urllib
-
-from HTMLParser import HTMLParser
+import json
 
 import supybot.utils as utils
 from supybot.commands import *
@@ -37,47 +36,6 @@ import supybot.plugins as plugins
 import supybot.ircutils as ircutils
 import supybot.callbacks as callbacks
 
-class MyParser(HTMLParser):
-  def __init__(self, irc):
-    HTMLParser.__init__(self)
-    self.items = {}
-    self.current_item = None
-    self.current_description = False
-    self.current_link = False
-
-  def handle_starttag(self, tag, attrs):
-    if tag == 'li' and attrs[0][0] == 'data-url':
-      self.current_item = attrs[0][1]
-      self.items[ self.current_item ] = {}
-      self.items[ self.current_item ][ 'data-url' ] = attrs[0][1]
-
-    if tag == 'a' and self.current_item != None:
-      self.current_link = True
-
-    if tag == 'p' and self.current_item != None and attrs[0] == ( 'class', 'package-description' ):
-      self.current_description = True
-
-  def handle_endtag(self, tag):
-    if tag == 'a':
-      self.current_link = False
-    if tag == 'p':
-      self.current_description = False
-
-  def handle_data(self, data):
-    if self.current_link is True:
-      self.items[ self.current_item ][ 'name' ] = data
-    if self.current_description is True:
-      self.items[ self.current_item ][ 'desc' ] = data
-
-  def PrintItems(self, irc):
-    s = '%d matches' % ( len(self.items) )
-    s += ': '
-    matches = []
-    for i in self.items:
-      matches.append( '%s: %s <http://packagist.org%s>' % ( self.items[i]['name'], self.items[i]['desc'], self.items[i]['data-url'] ) )
-    s += " | ".join(matches)
-    irc.reply(s)
-    
 class Packagist(callbacks.Plugin):
     """Packagist plugin lets you search http://packagist.org for Composer
     packages
@@ -91,14 +49,23 @@ class Packagist(callbacks.Plugin):
         headers = utils.web.defaultHeaders
         headers['X-Requested-With'] = 'XMLHttpRequest'
 
-        search_url = 'http://packagist.org/search/'
-        opts = { 'search_query[query]' : text }
+        search_url = 'http://packagist.org/search.json'
+        opts = { 'q' : text }
 
-        fd = utils.web.getUrlFd( '%s?%s' % (search_url, urllib.urlencode(opts)), headers )
-        parser = MyParser(irc)
-        parser.feed(fd.read())
-        parser.PrintItems(irc)
+	url = '%s?%s' % ( search_url, urllib.urlencode( opts ) )
+        fd = utils.web.getUrlFd( url, headers )
+	result = json.load( fd )
         fd.close()
+
+	if len(result) > 0 and result[ 'total' ] > 0:
+          s = '%d matches: ' % ( result[ 'total' ] )
+          matches = []
+          for i in result[ 'results' ]:
+            matches.append( '%s: %s <%s>' % ( i[ 'name' ], i[ 'description' ], i[ 'url' ] ) )
+	  s += ' | '.join(matches)
+          irc.reply(s)
+        else:
+           irc.reply( 'No Matches' )
     find = wrap(find, ['text'])
 
 
